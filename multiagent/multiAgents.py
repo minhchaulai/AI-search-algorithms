@@ -151,7 +151,48 @@ class MinimaxAgent(MultiAgentSearchAgent):
             Returns the total number of agents in the game
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        numGhosts = gameState.getNumAgents() - 1
+
+        def pacMax(state, depth=0):
+            if depth == 0 or state.isWin() or state.isLose():
+                return self.evaluationFunction(state)
+
+            maximize = float("-inf")
+
+            possibleActions = []
+            for action in state.getLegalActions():
+                possibleActions.append(state.generateSuccessor(0, action))
+            for action in possibleActions:
+                maximize = max(maximize, ghostMin(action, depth, numGhosts))
+            return maximize
+
+        def ghostMin(state, depth=0, ghost=0):
+            if depth == 0 or state.isWin() or state.isLose():
+                return self.evaluationFunction(state)
+
+            minimize = float("inf")
+
+            possibleActions = []
+            for action in state.getLegalActions():
+                possibleActions.append(state.generateSuccessor(0, action))
+            for action in possibleActions:
+                if ghost > 1:
+                    minimize = min(minimize, ghostMin(action, depth, ghost - 1))
+                else:
+                    minimize = min(minimize, pacMax(action, depth - 1))
+            return minimize
+
+        val = float("-inf")
+        move = Directions.STOP
+        possibleActions = []
+        for action in gameState.getLegalActions():
+            possibleActions.append(action)
+        for action in possibleActions:
+            actionUtil = ghostMin(gameState.generateSuccessor(0, action), self.depth, numGhosts)
+            if actionUtil > val:
+                val = actionUtil
+                move = action
+        return move
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
