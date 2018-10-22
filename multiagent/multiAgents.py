@@ -128,71 +128,88 @@ class MultiAgentSearchAgent(Agent):
         self.evaluationFunction = util.lookup(evalFn, globals())
         self.depth = int(depth)
 
+
+
 class MinimaxAgent(MultiAgentSearchAgent):
     """
-      Your minimax agent (question 2)
+        Your minimax agent (question 2)
     """
 
     def getAction(self, gameState):
         """
-          Returns the minimax action from the current gameState using self.depth
-          and self.evaluationFunction.
+            Returns the minimax action from the current gameState using self.depth
+            and self.evaluationFunction.
 
-          Here are some method calls that might be useful when implementing minimax.
+            Here are some method calls that might be useful when implementing minimax.
 
-          gameState.getLegalActions(agentIndex):
+            gameState.getLegalActions(agentIndex):
             Returns a list of legal actions for an agent
             agentIndex=0 means Pacman, ghosts are >= 1
 
-          gameState.generateSuccessor(agentIndex, action):
+            gameState.generateSuccessor(agentIndex, action):
             Returns the successor game state after an agent takes an action
 
-          gameState.getNumAgents():
+            gameState.getNumAgents():
             Returns the total number of agents in the game
         """
         "*** YOUR CODE HERE ***"
+        if gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+
         numGhosts = gameState.getNumAgents() - 1
-
-        def pacMax(state, depth=0):
-            if depth == 0 or state.isWin() or state.isLose():
-                return self.evaluationFunction(state)
-
-            maximize = float("-inf")
-
-            possibleActions = []
-            for action in state.getLegalActions():
-                possibleActions.append(state.generateSuccessor(0, action))
-            for action in possibleActions:
-                maximize = max(maximize, ghostMin(action, depth, numGhosts))
-            return maximize
-
-        def ghostMin(state, depth=0, ghost=0):
-            if depth == 0 or state.isWin() or state.isLose():
-                return self.evaluationFunction(state)
-
-            minimize = float("inf")
-
-            possibleActions = []
-            for action in state.getLegalActions():
-                possibleActions.append(state.generateSuccessor(0, action))
-            for action in possibleActions:
-                if ghost > 1:
-                    minimize = min(minimize, ghostMin(action, depth, ghost - 1))
-                else:
-                    minimize = min(minimize, pacMax(action, depth - 1))
-            return minimize
-
-        val = float("-inf")
+        value = float("-inf")
         move = Directions.STOP
-        possibleActions = []
+
         for action in gameState.getLegalActions():
-            possibleActions.append(action)
-        for action in possibleActions:
-            actionUtil = ghostMin(gameState.generateSuccessor(0, action), self.depth, numGhosts)
-            if actionUtil > val:
-                val = actionUtil
+            nextState = gameState.generateSuccessor(0, action)
+            if nextState.isWin():
+                return action
+            score = self.moveGhost(nextState, numGhosts, 1)
+            if score > value:
+                value = score
                 move = action
         return move
+
+    def moveAgent(self, gameState, depth):
+        if gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+
+        nextMoves = []
+        for action in gameState.getLegalActions():
+            nextMoves.append(gameState.generateSuccessor(0, action))
+        numGhosts = gameState.getNumAgents() - 1
+
+        scores = []
+        for action in nextMoves:
+            scores.append(self.moveGhost(action, numGhosts, depth + 1))
+
+        return max(scores)
+
+    def moveGhost(self, gameState, ghostNumber, depth):
+        if gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+
+        num = ghostNumber - 1
+
+        nextMoves = []
+        for action in gameState.getLegalActions(ghostNumber):
+            nextMoves.append(gameState.generateSuccessor(ghostNumber, action))
+
+        if num == 0:
+            scores = []
+            if depth == self.depth:
+                for action in nextMoves:
+                    scores.append(self.evaluationFunction(action))
+            else:
+                for action in nextMoves:
+                    scores.append(self.moveAgent(action, depth))
+        else:
+            scores = []
+            for action in nextMoves:
+                scores.append(self.moveGhost(action, num, depth))
+
+        return min(scores)
+
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
@@ -204,7 +221,63 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
           Returns the minimax action using self.depth and self.evaluationFunction
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        if gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+
+        numGhosts = gameState.getNumAgents() - 1
+        value = float("-inf")
+        move = Directions.STOP
+
+        for action in gameState.getLegalActions():
+            nextState = gameState.generateSuccessor(0, action)
+            if nextState.isWin():
+                return action
+            score = self.moveGhost(nextState, numGhosts, 1)
+            if score > value:
+                value = score
+                move = action
+        return move
+
+    def moveAgent(self, gameState, depth):
+        if gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+
+        nextMoves = []
+        for action in gameState.getLegalActions():
+            nextMoves.append(gameState.generateSuccessor(0, action))
+        numGhosts = gameState.getNumAgents() - 1
+
+        scores = []
+        for action in nextMoves:
+            scores.append(self.moveGhost(action, numGhosts, depth + 1))
+
+        return max(scores)
+
+    def moveGhost(self, gameState, ghostNumber, depth):
+        if gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+
+        num = ghostNumber - 1
+
+        nextMoves = []
+        for action in gameState.getLegalActions(ghostNumber):
+            nextMoves.append(gameState.generateSuccessor(ghostNumber, action))
+
+        if num == 0:
+            scores = []
+            if depth == self.depth:
+                for action in nextMoves:
+                    scores.append(self.evaluationFunction(action))
+            else:
+                for action in nextMoves:
+                    scores.append(self.moveAgent(action, depth))
+        else:
+            scores = []
+            for action in nextMoves:
+                scores.append(self.moveGhost(action, num, depth))
+
+        return min(scores)
+
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
