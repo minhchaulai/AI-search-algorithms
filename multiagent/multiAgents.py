@@ -213,7 +213,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
-      Your minimax agent with alpha-beta pruning (question 3)
+        Your minimax agent with alpha-beta pruning (question 3)
     """
 
     def getAction(self, gameState):
@@ -232,51 +232,50 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
             nextState = gameState.generateSuccessor(0, action)
             if nextState.isWin():
                 return action
-            score = self.moveGhost(nextState, numGhosts, 1)
+            score = self.moveGhost(nextState, numGhosts, 1, value, float("inf"))
             if score > value:
                 value = score
                 move = action
         return move
 
-    def moveAgent(self, gameState, depth):
+    def moveAgent(self, gameState, depth, alpha, beta):
         if gameState.isWin() or gameState.isLose():
             return self.evaluationFunction(gameState)
 
-        nextMoves = []
-        for action in gameState.getLegalActions():
-            nextMoves.append(gameState.generateSuccessor(0, action))
         numGhosts = gameState.getNumAgents() - 1
+        value = float("-inf")
 
-        scores = []
-        for action in nextMoves:
-            scores.append(self.moveGhost(action, numGhosts, depth + 1))
+        for action in gameState.getLegalActions():
+            move = gameState.generateSuccessor(0, action)
+            score = self.moveGhost(move, numGhosts, depth + 1, alpha, beta)
+            value = max(value, score)
+            if value > beta:
+                return value
+                alpha = max(alpha, value)
+        return value
 
-        return max(scores)
-
-    def moveGhost(self, gameState, ghostNumber, depth):
+    def moveGhost(self, gameState, ghostNum, depth, alpha, beta):
         if gameState.isWin() or gameState.isLose():
             return self.evaluationFunction(gameState)
 
-        num = ghostNumber - 1
+        numGhosts = ghostNum - 1
+        value = float("inf")
 
-        nextMoves = []
-        for action in gameState.getLegalActions(ghostNumber):
-            nextMoves.append(gameState.generateSuccessor(ghostNumber, action))
-
-        if num == 0:
-            scores = []
-            if depth == self.depth:
-                for action in nextMoves:
-                    scores.append(self.evaluationFunction(action))
+        for action in gameState.getLegalActions(ghostNum):
+            move = gameState.generateSuccessor(ghostNum, action)
+            if numGhosts == 0:
+                if depth == self.depth:
+                    score = self.evaluationFunction(move)
+                else:
+                    score = self.moveAgent(move, depth, alpha, beta)
             else:
-                for action in nextMoves:
-                    scores.append(self.moveAgent(action, depth))
-        else:
-            scores = []
-            for action in nextMoves:
-                scores.append(self.moveGhost(action, num, depth))
+                score = self.moveGhost(move, numGhosts, depth, alpha, beta)
+            value = min(value, score)
+            if value < alpha:
+                return value
+            beta = min(beta, value)
+        return value
 
-        return min(scores)
 
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
